@@ -39,3 +39,12 @@ def sequence_to_hot_vectors(sequence,normalize_length=None):
         seq_matrix[(i,int(aa)-1)] = 1
     return seq_matrix
 
+def process_fasta(path):
+    sequences = []
+    allowed_aas = set('acdefghiklmnpqrstvwy')
+    for line in open(path):
+        if not line.startswith('>'):
+            line = line.strip().lower()
+            if len(set(line)-allowed_aas) == 0:
+                sequences.append(line)
+    return sequences
