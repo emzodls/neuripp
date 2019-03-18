@@ -125,10 +125,11 @@ for i,sequence in enumerate(test_set):
         test_X[(i,120-1-j,aa_indices[aa]-1)] = 1
 
 file_name = os.path.basename(sys.argv[0]).split('.')[0]
-check_cb = tf.keras.callbacks.ModelCheckpoint('checkpoints/' + file_name + '.{epoch:02d}-{val_accuracy:.2f}.hdf5',
-                                           monitor='val_accuracy',
+check_cb = tf.keras.callbacks.ModelCheckpoint('checkpoints/' + file_name + '.{epoch:02d}-{validation_accuracy:.2f}.hdf5',
+                                           monitor='validation_accuracy',
                                            verbose=1,  mode='max',save_best_only=True)
-earlystop_cb = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', patience=8, verbose=1, mode='auto',restore_best_weights=True)
+earlystop_cb = tf.keras.callbacks.EarlyStopping(monitor='validation_accuracy', patience=10,
+                                                verbose=1, mode='auto',restore_best_weights=True)
 history = LossHistory()
 labeler.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
