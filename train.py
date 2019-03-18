@@ -3,11 +3,11 @@ from tensorflow import keras
 from tensorflow.keras.models import Sequential
 from utils import *
 from random import shuffle
-from models import create_model_lstm,create_model_conv_lstm,create_model_conv
+from models import create_model_lstm,create_model_conv_lstm,create_model_conv,create_model_conv_parallel,create_model_conv_parallel_lstm
 import os
 
-positives_path = '/Users/u1474301/Dropbox/Lab/Warwick/RiPP_nnets/final_train_sets/positives_all.fa'
-negatives_path = '/Users/u1474301/Dropbox/Lab/Warwick/RiPP_nnets/final_train_sets/negatives_all.fa'
+positives_path = '/Users/emzodls/Dropbox/Lab/Warwick/RiPP_nnets/final_train_sets/positives_all.fa'
+negatives_path = '/Users/emzodls/Dropbox/Lab/Warwick/RiPP_nnets/final_train_sets/negatives_all.fa'
 
 positive_sequences = process_fasta(positives_path)
 negative_sequences = process_fasta(negatives_path)
@@ -74,7 +74,7 @@ def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_f
             if best_val_acc < acc:
                 best_val_acc = acc
                 best_val_epoch = epoch + 1
-                print('Saving Model: {}, Acc: {}\n'.format(best_val_epoch,best_val_acc))
+                print('Saving Model: {}, Acc: {}'.format(best_val_epoch,best_val_acc))
                 if logfile:
                     with open(logfile, 'a') as outfile:
                         outfile.write('Saving Model: {}, Acc: {}\n'.format(best_val_epoch,best_val_acc))
@@ -85,7 +85,10 @@ def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_f
             else:
                 model.load_weights(save_name)
                 no_improvement += 1
-
+                print('No Improvement Model: {}, ({} times)'.format(epoch + 1, no_improvement))
+                if logfile:
+                    with open(logfile, 'a') as outfile:
+                        outfile.write('No Improvement Model: {}, ({} times)'.format(epoch + 1, no_improvement))
             if no_improvement >= wait_until:
                 break
 
@@ -97,12 +100,24 @@ if __name__ == '__main__':
     cnn = create_model_conv()
     cnn.summary()
     train_model(cnn, 150, positive_pairs, negative_pairs, pos_frac=1.0, neg_frac=0.5, val_frac=0.15,
-                refresh_data=5, save_name='cnn_layer',wait_until=30,logfile='cnn.log')
-    lstm = create_model_lstm()
-    lstm.summary()
-    train_model(lstm, 150, positive_pairs, negative_pairs, pos_frac=1.0, neg_frac=0.5, val_frac=0.15,
-                refresh_data=5, save_name='lstm_layer',wait_until=30,logfile='lstm.log')
+                refresh_data=5, save_name='cnn_linear',wait_until=20,logfile='cnn_linear.log')
+
+    cnn_parallel = create_model_conv_parallel()
+    cnn_parallel.summary()
+    train_model(cnn_parallel, 150, positive_pairs, negative_pairs, pos_frac=1.0, neg_frac=0.5, val_frac=0.15,
+                refresh_data=5, save_name='cnn_parallel', wait_until=20, logfile='cnn_parallel.log')
+
     cnn_lstm = create_model_conv_lstm()
     cnn_lstm.summary()
     train_model(cnn_lstm, 150, positive_pairs, negative_pairs, pos_frac=1.0, neg_frac=0.5, val_frac=0.15,
-                refresh_data=5, save_name='cnn_lstm_layer',wait_until=30,logfile='cnn_lstm.log')
+                refresh_data=5, save_name='cnn_linear_lstm',wait_until=20,logfile='cnn_linear_lstm.log')
+
+    cnn_lstm_parallel = create_model_conv_parallel_lstm()
+    cnn_lstm_parallel.summary()
+    train_model(cnn_lstm_parallel, 150, positive_pairs, negative_pairs, pos_frac=1.0, neg_frac=0.5, val_frac=0.15,
+                refresh_data=5, save_name='cnn_linear_lstm',wait_until=20,logfile='cnn_parallel_lstm.log')
+
+    lstm = create_model_lstm()
+    lstm.summary()
+    train_model(lstm, 150, positive_pairs, negative_pairs, pos_frac=1.0, neg_frac=0.5, val_frac=0.15,
+                refresh_data=5, save_name='lstm_layer',wait_until=20,logfile='lstm.log')
