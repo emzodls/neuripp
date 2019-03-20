@@ -20,7 +20,7 @@ def mix_samples(set_a,set_b,set_a_frac=0.5,set_b_frac=0.5):
     return master_set,set_a[set_a_idx:],set_b[set_b_idx:]
 
 def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_frac=-0.1,
-                x_val=None,y_val=None,refresh_data=None,max_length=120,save_name='',store_best_acc = True,
+                x_val=[],y_val=[],refresh_data=None,max_length=120,save_name='',store_best_acc = True,
                 wait_until=1000,logfile=None,reset_weights=False):
 
     if logfile:
@@ -42,7 +42,7 @@ def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_f
         x_train = np.array([sequence_to_hot_vectors(seq,normalize_length=max_length) for seq in x_train])
         y_train = np.array(y_train)
 
-        if not x_val and not y_val and val_frac > 0:
+        if not len(x_val) > 0  and not len(y_val) > 0 and val_frac > 0:
             x_val, y_val = zip(*val_frac_data)
             x_val = np.array([sequence_to_hot_vectors(seq, normalize_length=max_length) for seq in x_val])
             y_val = np.array(y_val)
