@@ -78,7 +78,7 @@ def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_f
                 print('No Improvement Model: {}, ({} times)'.format(epoch + 1, no_improvement))
                 if logfile:
                     with open(logfile, 'a') as outfile:
-                        outfile.write('No Improvement Model: {}, ({} times)'.format(epoch + 1, no_improvement))
+                        outfile.write('No Improvement Model: {}, ({} times)\n'.format(epoch + 1, no_improvement))
             if no_improvement >= wait_until:
                 break
 
