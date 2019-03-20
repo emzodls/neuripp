@@ -20,7 +20,7 @@ def mix_samples(set_a,set_b,set_a_frac=0.5,set_b_frac=0.5):
     return master_set,set_a[set_a_idx:],set_b[set_b_idx:]
 
 def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_frac=-0.1,
-                val_data=(None,None),refresh_data=None,max_length=120,save_name='',store_best_acc = True,
+                x_val=None,y_val=None,refresh_data=None,max_length=120,save_name='',store_best_acc = True,
                 wait_until=1000,logfile=None,reset_weights=False):
 
     if logfile:
@@ -42,8 +42,7 @@ def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_f
         x_train = np.array([sequence_to_hot_vectors(seq,normalize_length=max_length) for seq in x_train])
         y_train = np.array(y_train)
 
-        if val_data[0] and val_data[1] and len(val_data[0]) == len(val_data[1]):
-            x_val,y_val = val_data
+        if x_val and y_val and len(x_val) == len(y_val):
             x_val = np.array([sequence_to_hot_vectors(seq, normalize_length=max_length) for seq in x_val])
             y_val = np.array(y_val)
         elif val_frac > 0:
@@ -119,24 +118,24 @@ if __name__ == '__main__':
     cnn = create_model_conv()
     cnn.summary()
     train_model(cnn, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
-                refresh_data=5, save_name='cnn_linear',wait_until=50,logfile='cnn_linear.log',val_data=(test_pos,test_neg))
+                refresh_data=5, save_name='cnn_linear',wait_until=50,logfile='cnn_linear.log',x_val=test_pos,y_val=test_neg)
 
     cnn_parallel = create_model_conv_parallel()
     cnn_parallel.summary()
     train_model(cnn_parallel, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
-                refresh_data=5, save_name='cnn_parallel', wait_until=50, logfile='cnn_parallel.log',val_data=(test_pos,test_neg))
+                refresh_data=5, save_name='cnn_parallel', wait_until=50, logfile='cnn_parallel.log',x_val=test_pos,y_val=test_neg)
 
     cnn_lstm = create_model_conv_lstm()
     cnn_lstm.summary()
     train_model(cnn_lstm, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
-                refresh_data=5, save_name='cnn_linear_lstm',wait_until=50,logfile='cnn_linear_lstm.log',val_data=(test_pos,test_neg))
+                refresh_data=5, save_name='cnn_linear_lstm',wait_until=50,logfile='cnn_linear_lstm.log',x_val=test_pos,y_val=test_neg)
 
     cnn_lstm_parallel = create_model_conv_parallel_lstm()
     cnn_lstm_parallel.summary()
     train_model(cnn_lstm_parallel, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
-                refresh_data=5, save_name='cnn_parallel_lstm',wait_until=50,logfile='cnn_parallel_lstm.log',val_data=(test_pos,test_neg))
+                refresh_data=5, save_name='cnn_parallel_lstm',wait_until=50,logfile='cnn_parallel_lstm.log',x_val=test_pos,y_val=test_neg)
 
     lstm = create_model_lstm()
     lstm.summary()
     train_model(lstm, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
-                refresh_data=5, save_name='lstm_layer',wait_until=50,logfile='lstm.log',val_data=(test_pos,test_neg))
+                refresh_data=5, save_name='lstm_layer',wait_until=50,logfile='lstm.log',x_val=test_pos,y_val=test_neg)
