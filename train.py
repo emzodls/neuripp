@@ -118,25 +118,25 @@ if __name__ == '__main__':
 
     cnn = create_model_conv()
     cnn.summary()
-    train_model(cnn, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35, val_frac=0.15,
+    train_model(cnn, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
                 refresh_data=5, save_name='cnn_linear',wait_until=50,logfile='cnn_linear.log',val_data=(test_pos,test_neg))
 
     cnn_parallel = create_model_conv_parallel()
     cnn_parallel.summary()
-    train_model(cnn_parallel, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35, val_frac=0.15,
+    train_model(cnn_parallel, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
                 refresh_data=5, save_name='cnn_parallel', wait_until=50, logfile='cnn_parallel.log',val_data=(test_pos,test_neg))
 
     cnn_lstm = create_model_conv_lstm()
     cnn_lstm.summary()
-    train_model(cnn_lstm, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35, val_frac=0.15,
+    train_model(cnn_lstm, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
                 refresh_data=5, save_name='cnn_linear_lstm',wait_until=50,logfile='cnn_linear_lstm.log',val_data=(test_pos,test_neg))
 
     cnn_lstm_parallel = create_model_conv_parallel_lstm()
     cnn_lstm_parallel.summary()
-    train_model(cnn_lstm_parallel, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35, val_frac=0.15,
+    train_model(cnn_lstm_parallel, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
                 refresh_data=5, save_name='cnn_parallel_lstm',wait_until=50,logfile='cnn_parallel_lstm.log',val_data=(test_pos,test_neg))
 
     lstm = create_model_lstm()
     lstm.summary()
-    train_model(lstm, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35, val_frac=0.15,
+    train_model(lstm, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
                 refresh_data=5, save_name='lstm_layer',wait_until=50,logfile='lstm.log',val_data=(test_pos,test_neg))
