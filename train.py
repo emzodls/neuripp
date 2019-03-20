@@ -42,10 +42,7 @@ def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_f
         x_train = np.array([sequence_to_hot_vectors(seq,normalize_length=max_length) for seq in x_train])
         y_train = np.array(y_train)
 
-        if len(x_val) == len(y_val):
-            x_val = np.array([sequence_to_hot_vectors(seq, normalize_length=max_length) for seq in x_val])
-            y_val = np.array(y_val)
-        elif val_frac > 0:
+        if not x_val and not y_val and val_frac > 0:
             x_val, y_val = zip(*val_frac_data)
             x_val = np.array([sequence_to_hot_vectors(seq, normalize_length=max_length) for seq in x_val])
             y_val = np.array(y_val)
@@ -114,6 +111,9 @@ if __name__ == '__main__':
 
     val_data = test_pos+test_neg
     x_test, y_test = zip(*val_data)
+
+    x_test = np.array([sequence_to_hot_vectors(seq, normalize_length=max_length) for seq in x_test])
+    y_test = np.array(y_test)
 
     cnn = create_model_conv()
     cnn.summary()
