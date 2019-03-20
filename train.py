@@ -89,8 +89,8 @@ def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_f
 
 if __name__ == '__main__':
 
-    positives_path = '/Users/emzodls/Dropbox/Lab/Warwick/RiPP_nnets/final_train_sets/positives_all.fa'
-    negatives_path = '/Users/emzodls/Dropbox/Lab/Warwick/RiPP_nnets/final_train_sets/negatives_all.fa'
+    positives_path = 'positives_all.fa'
+    negatives_path = 'negatives_all.fa'
 
     positive_sequences = process_fasta(positives_path)
     negative_sequences = process_fasta(negatives_path)
