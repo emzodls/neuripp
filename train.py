@@ -21,7 +21,7 @@ def mix_samples(set_a,set_b,set_a_frac=0.5,set_b_frac=0.5):
 
 def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_frac=0,
                 val_data=(None,None),refresh_data=None,max_length=120,save_name='',store_best_acc = True,
-                wait_until=1000,logfile=None):
+                wait_until=1000,logfile=None,reset_weights=False):
 
     if logfile:
         with open(logfile,'a') as outfile:
@@ -73,7 +73,8 @@ def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_f
                 model.save_weights(save_name)
                 no_improvement = 0
             else:
-                model.load_weights(save_name)
+                if reset_weights:
+                    model.load_weights(save_name)
                 no_improvement += 1
                 print('No Improvement Model: {}, ({} times)'.format(epoch + 1, no_improvement))
                 if logfile:
@@ -98,28 +99,44 @@ if __name__ == '__main__':
     positive_pairs = [(seq, 1) for seq in positive_sequences]
 
     max_length = 120
+    shuffle(positive_pairs)
+    shuffle(negative_pairs)
+
+    # take 550 out (~20%) of the positive set, 1650 out of the negative set for validation (8.5%) , 2176 left in pos set
+
+    test_pos = positive_pairs[:550]
+    test_neg = negative_pairs[:1650]
+
+    train_pos = positive_pairs[550:]
+    train_neg = negative_pairs[1650:]
+
+    with open('train_set.fa','w') as outfile:
+        for i,(seq,pos) in enumerate(test_pos):
+            outfile.write('>pos_{}\n{}\n'.format(i+1,seq.upper()))
+        for i,(seq,neg) in enumerate(test_neg):
+            outfile.write('>neg_{}\n{}\n'.format(i+1,seq.upper()))
 
     cnn = create_model_conv()
     cnn.summary()
-    train_model(cnn, 150, positive_pairs, negative_pairs, pos_frac=1.0, neg_frac=0.4, val_frac=0.15,
-                refresh_data=5, save_name='cnn_linear',wait_until=20,logfile='cnn_linear.log')
+    train_model(cnn, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35, val_frac=0.15,
+                refresh_data=5, save_name='cnn_linear',wait_until=50,logfile='cnn_linear.log',val_data=(test_pos,test_neg))
 
     cnn_parallel = create_model_conv_parallel()
     cnn_parallel.summary()
-    train_model(cnn_parallel, 150, positive_pairs, negative_pairs, pos_frac=1.0, neg_frac=0.4, val_frac=0.15,
-                refresh_data=5, save_name='cnn_parallel', wait_until=20, logfile='cnn_parallel.log')
+    train_model(cnn_parallel, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35, val_frac=0.15,
+                refresh_data=5, save_name='cnn_parallel', wait_until=50, logfile='cnn_parallel.log',val_data=(test_pos,test_neg))
 
     cnn_lstm = create_model_conv_lstm()
     cnn_lstm.summary()
-    train_model(cnn_lstm, 150, positive_pairs, negative_pairs, pos_frac=1.0, neg_frac=0.4, val_frac=0.15,
-                refresh_data=5, save_name='cnn_linear_lstm',wait_until=20,logfile='cnn_linear_lstm.log')
+    train_model(cnn_lstm, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35, val_frac=0.15,
+                refresh_data=5, save_name='cnn_linear_lstm',wait_until=50,logfile='cnn_linear_lstm.log',val_data=(test_pos,test_neg))
 
     cnn_lstm_parallel = create_model_conv_parallel_lstm()
     cnn_lstm_parallel.summary()
-    train_model(cnn_lstm_parallel, 150, positive_pairs, negative_pairs, pos_frac=1.0, neg_frac=0.4, val_frac=0.15,
-                refresh_data=5, save_name='cnn_parallel_lstm',wait_until=20,logfile='cnn_parallel_lstm.log')
+    train_model(cnn_lstm_parallel, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35, val_frac=0.15,
+                refresh_data=5, save_name='cnn_parallel_lstm',wait_until=50,logfile='cnn_parallel_lstm.log',val_data=(test_pos,test_neg))
 
     lstm = create_model_lstm()
     lstm.summary()
-    train_model(lstm, 150, positive_pairs, negative_pairs, pos_frac=1.0, neg_frac=0.4, val_frac=0.15,
-                refresh_data=5, save_name='lstm_layer',wait_until=20,logfile='lstm.log')
+    train_model(lstm, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35, val_frac=0.15,
+                refresh_data=5, save_name='lstm_layer',wait_until=50,logfile='lstm.log',val_data=(test_pos,test_neg))
