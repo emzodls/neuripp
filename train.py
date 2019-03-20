@@ -6,16 +6,6 @@ from random import shuffle
 from models import create_model_lstm,create_model_conv_lstm,create_model_conv,create_model_conv_parallel,create_model_conv_parallel_lstm
 import os
 
-positives_path = '/Users/emzodls/Dropbox/Lab/Warwick/RiPP_nnets/final_train_sets/positives_all.fa'
-negatives_path = '/Users/emzodls/Dropbox/Lab/Warwick/RiPP_nnets/final_train_sets/negatives_all.fa'
-
-positive_sequences = process_fasta(positives_path)
-negative_sequences = process_fasta(negatives_path)
-
-negative_pairs = [(seq,0) for seq in negative_sequences]
-positive_pairs = [(seq,1) for seq in positive_sequences]
-
-max_length = 120
 
 def mix_samples(set_a,set_b,set_a_frac=0.5,set_b_frac=0.5):
 
@@ -30,7 +20,7 @@ def mix_samples(set_a,set_b,set_a_frac=0.5,set_b_frac=0.5):
     return master_set,set_a[set_a_idx:],set_b[set_b_idx:]
 
 def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_frac=0,
-                val_data=(None,None),refresh_data=None,max_length=max_length,save_name='',store_best_acc = True,
+                val_data=(None,None),refresh_data=None,max_length=120,save_name='',store_best_acc = True,
                 wait_until=1000,logfile=None):
 
     if logfile:
@@ -97,6 +87,18 @@ def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_f
 
 
 if __name__ == '__main__':
+
+    positives_path = '/Users/emzodls/Dropbox/Lab/Warwick/RiPP_nnets/final_train_sets/positives_all.fa'
+    negatives_path = '/Users/emzodls/Dropbox/Lab/Warwick/RiPP_nnets/final_train_sets/negatives_all.fa'
+
+    positive_sequences = process_fasta(positives_path)
+    negative_sequences = process_fasta(negatives_path)
+
+    negative_pairs = [(seq, 0) for seq in negative_sequences]
+    positive_pairs = [(seq, 1) for seq in positive_sequences]
+
+    max_length = 120
+
     cnn = create_model_conv()
     cnn.summary()
     train_model(cnn, 150, positive_pairs, negative_pairs, pos_frac=1.0, neg_frac=0.4, val_frac=0.15,
