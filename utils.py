@@ -74,7 +74,20 @@ def process_fasta(path):
                 sequences.append(line)
     return sequences
 
-def classify_peptides(model_path,fasta_file,batch_size=1000,output_file=None,output_dictionary=False):
+def prepare_input_vector(sequences,label,max_len=120):
+    '''
+    :param sequences: iterable of peptide sequences
+    :param label: 0 or 1
+    :return: tuple of np arrays that can be fed to a model for evaluation or training
+    '''
+    x = np.array([sequence_to_hot_vectors(seq,normalize_length=max_len) for seq in sequences])
+    y = np.array([label for seq in sequences])
+
+    return(x,y)
+
+
+def classify_peptides(model_path,fasta_file,batch_size=1000,max_len=120,
+                      output_file=None,output_dictionary=False):
     if os.path.isfile(output_file):
         os.remove(output_file)
     fasta_dict = {}
@@ -90,7 +103,7 @@ def classify_peptides(model_path,fasta_file,batch_size=1000,output_file=None,out
             fasta_dict[entry.id] = str(seq)
         if (idx + 1) % batch_size == 0:
             order = sorted(list(fasta_dict.keys()))
-            test_x = np.array([sequence_to_hot_vectors(fasta_dict[seq],normalize_length=120) for seq in order])
+            test_x = np.array([sequence_to_hot_vectors(fasta_dict[seq],normalize_length=max_len) for seq in order])
             guesses = model.predict(test_x)
             id = [np.argmax(x) for x in guesses]
             guess_dict = dict(zip(order,id))
@@ -104,7 +117,7 @@ def classify_peptides(model_path,fasta_file,batch_size=1000,output_file=None,out
             fasta_dict = {}
     else:
         order = sorted(list(fasta_dict.keys()))
-        test_x = np.array([sequence_to_hot_vectors(fasta_dict[seq], normalize_length=120) for seq in order])
+        test_x = np.array([sequence_to_hot_vectors(fasta_dict[seq], normalize_length= max_len) for seq in order])
         guesses = model.predict(test_x)
         id = [np.argmax(x) for x in guesses]
         guess_dict = dict(zip(order, id))

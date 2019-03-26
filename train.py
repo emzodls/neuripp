@@ -21,11 +21,13 @@
     along with NeuRiPP.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-
+import tensorflow
+from tensorflow import keras
 from utils import *
 from random import shuffle
-from models import create_model_lstm,create_model_conv_lstm,create_model_conv,create_model_conv_parallel,create_model_conv_parallel_lstm
-
+from models import create_model_lstm,create_model_conv_lstm,\
+    create_model_conv,create_model_conv_parallel,create_model_conv_parallel_lstm
+import argparse
 
 
 def mix_samples(set_a,set_b,set_a_frac=0.5,set_b_frac=0.5):
@@ -100,8 +102,31 @@ def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_f
 
     return model,best_val_acc,best_val_epoch
 
+def check_model_fasta(stored_model,fasta_file,label):
+    x_test,y_test = prepare_input_vector(process_fasta(fasta_file),label)
+    model = keras.models.load_model(stored_model)
+    loss, acc = model.evaluate(x_test, y_test)
+    return(loss,acc)
+
+def check_model_tuple(stored_model,data):
+    x_test,y_test = data
+    model = keras.models.load_model(stored_model)
+    loss, acc = model.evaluate(x_test, y_test)
+    return(loss,acc)
+
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-pos", type=str, help="Path to Fasta File Containing Positive Sequences.")
+    parser.add_argument("-neg", type=str, help="Path to Fasta File Containing Negative Sequences.")
+    parser.add_argument("-pos_frac",type=float,help="Fraction of Positive Dataset to Use for Training",default=1.0)
+    parser.add_argument("-neg_frac", type=float, help="Fraction of Positive Dataset to Use for Training", default=1.0)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-val_frac',type=float,
+                       help="Set aside fraction of positive and negative set to use for Validation", default=0)
+
 
     positives_path = 'positives_all.fa'
     negatives_path = 'negatives_all.fa'
