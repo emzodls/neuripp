@@ -24,6 +24,7 @@
 import numpy as np
 from Bio import SeqIO
 import os
+from glob import glob
 
 def sequence_to_idx(sequence,normalize_length=None):
     '''
@@ -65,13 +66,22 @@ def sequence_to_hot_vectors(sequence,normalize_length=None):
 def process_fasta(path):
     sequences = []
     allowed_aas = set('acdefghiklmnpqrstvwy')
-    for line in open(path):
-        if not line.startswith('>'):
-            if line[-1] == '*':
-                line = line[:-1]
-            line = line.strip().lower()
-            if len(set(line)-allowed_aas) == 0:
-                sequences.append(line)
+    if type(path) is str:
+        for line in open(path):
+            if not line.startswith('>'):
+                if line[-1] == '*':
+                    line = line[:-1]
+                line = line.strip().lower()
+                if len(set(line)-allowed_aas) == 0:
+                    sequences.append(line)
+    else:
+        for line in path:
+            if not line.startswith('>'):
+                if line[-1] == '*':
+                    line = line[:-1]
+                line = line.strip().lower()
+                if len(set(line)-allowed_aas) == 0:
+                    sequences.append(line)
     return sequences
 
 def prepare_input_vector(sequences,label,max_len=120):
@@ -86,14 +96,12 @@ def prepare_input_vector(sequences,label,max_len=120):
     return(x,y)
 
 
-def classify_peptides(model_path,fasta_file,batch_size=1000,max_len=120,
-                      output_file=None,output_dictionary=False):
-    if os.path.isfile(output_file):
-        os.remove(output_file)
+def classify_peptides(model,fasta_file,batch_size=1000,max_len=120,
+                      output_name=None,output_dictionary=False,output_negs=False):
+
     fasta_dict = {}
     classification = {}
     allowed_aas = set('acdefghiklmnpqrstvwy')
-    model = keras.models.load_model(model_path)
     fasta_entries = SeqIO.parse(fasta_file,'fasta')
     for idx,entry in enumerate(fasta_entries):
         seq = str(entry.seq).lower()
@@ -109,11 +117,14 @@ def classify_peptides(model_path,fasta_file,batch_size=1000,max_len=120,
             scores = [np.log(x[1]/x[0]) for x in guesses]
             score_dict = dict(zip(order, scores))
             guess_dict = dict(zip(order, ids))
-            if output_file:
-                with open(output_file,'a') as outfile:
+            if output_name:
+                with open(output_name+"_pos.fa",'a') as outfile_pos, open(output_name+"_neg.fa",'a') as outfile_neg:
                     for fasta_tag,guess in guess_dict.items():
                         if guess == 1:
-                            outfile.write('>{}|score:{:.2f}\n{}\n'.format(fasta_tag,score_dict[fasta_tag],fasta_dict[fasta_tag].upper()))
+                            outfile_pos.write('>{}|score:{:.2f}\n{}\n'.format(fasta_tag,score_dict[fasta_tag],fasta_dict[fasta_tag].upper()))
+                        elif output_negs:
+                            outfile_neg.write('>{}|score:{:.2f}\n{}\n'.format(fasta_tag, score_dict[fasta_tag],
+                                                                              fasta_dict[fasta_tag].upper()))
             if output_dictionary:
                 classification.update(guess_dict)
             fasta_dict = {}
@@ -125,12 +136,19 @@ def classify_peptides(model_path,fasta_file,batch_size=1000,max_len=120,
         scores = [np.log(x[1] / x[0]) for x in guesses]
         score_dict = dict(zip(order, scores))
         guess_dict = dict(zip(order, ids))
-        if output_file:
-            with open(output_file, 'a') as outfile:
+        if output_name:
+            if os.path.isfile(output_name + '_pos.fa'):
+                os.remove(output_name + '_pos.fa')
+            if os.path.isfile(output_name + '_neg.fa'):
+                os.remove(output_name + '_neg.fa')
+            with open(output_name + "_pos.fa", 'a') as outfile_pos, open(output_name + "_neg.fa", 'a') as outfile_neg:
                 for fasta_tag, guess in guess_dict.items():
                     if guess == 1:
-                        outfile.write('>{}|score:{:.2f}\n{}\n'.format(fasta_tag, score_dict[fasta_tag],
-                                                                       fasta_dict[fasta_tag].upper()))
+                        outfile_pos.write('>{}|score:{:.2f}\n{}\n'.format(fasta_tag, score_dict[fasta_tag],
+                                                                          fasta_dict[fasta_tag].upper()))
+                    elif output_negs:
+                        outfile_neg.write('>{}|score:{:.2f}\n{}\n'.format(fasta_tag, score_dict[fasta_tag],
+                                                                          fasta_dict[fasta_tag].upper()))
         if output_dictionary:
             classification.update(guess_dict)
     if output_dictionary:

@@ -28,6 +28,7 @@ from random import shuffle
 from models import create_model_lstm,create_model_conv_lstm,\
     create_model_conv,create_model_conv_parallel,create_model_conv_parallel_lstm
 import argparse
+from glob import glob
 
 
 def mix_samples(set_a,set_b,set_a_frac=0.5,set_b_frac=0.5):
@@ -114,22 +115,56 @@ def check_model_tuple(stored_model,data):
     loss, acc = model.evaluate(x_test, y_test)
     return(loss,acc)
 
+def check_positive(value):
+    ivalue = int(value)
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
+    return ivalue
+
+def check_frac(value):
+    fvalue = float(value)
+    if fvalue < 0 or fvalue > 1:
+        raise argparse.ArgumentTypeError("{} must be between 0.0 and 1.0".format(value))
+    return fvalue
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("-pos", type=str, help="Path to Fasta File Containing Positive Sequences.")
-    parser.add_argument("-neg", type=str, help="Path to Fasta File Containing Negative Sequences.")
-    parser.add_argument("-pos_frac",type=float,help="Fraction of Positive Dataset to Use for Training",default=1.0)
-    parser.add_argument("-neg_frac", type=float, help="Fraction of Positive Dataset to Use for Training", default=1.0)
+
+    parser.add_argument("-pos_frac",type=check_frac,help="Fraction of Positive Dataset to Use for Training",default=1.0)
+    parser.add_argument("-neg_frac", type=check_frac, help="Header for Saved Model File", default=1.0)
+    parser.add_argument("-e","--epochs",type=check_positive,default=100,help="Number of Epochs with Training Set")
+    parser.add_argument("-r","--refresh_every",type=check_positive,default=5,help="Reshuffle Training Data Every n "
+                                                                                  "Epochs (only works if fraction of Training Set is taken)")
+    parser.add_argument('-m','--model',type=str,choices=['cnn-parallel','cnn-linear','cnn-linear-lstm','cnn-parallel-lstm','lstm'],default="cnn-parallel",
+                        help="Specify Base Model to Train")
+    parser.add_argument('-l','--max_len',type=check_positive,default=120,help="Assumed Maximum Length of Precursor Peptide (truncates amino acids after this length)")
+    parser.add_argument('-w', '--wait_until', type=check_positive, default=100,
+                        help="Number of Rounds allowed for no improvement in training set before terminating.")
+    parser.add_argument("-outname", type=str, help="Header for Model Training Files", default="model")
+    parser.add_argument("-outdir",type=str,help="Path to Output Directory",default=os.getcwd())
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-val_frac',type=float,
+    group.add_argument('-val_frac',type=check_frac,
                        help="Set aside fraction of positive and negative set to use for Validation", default=0)
+    group.add_argument('-val_set', type=argparse.FileType('r'),nargs=2,help="Fasta Files Corresponding to Positive and Negative Test Sets")
+    parser.add_argument("-pos", type=argparse.FileType('r'), help="Path to Fasta File Containing Positive Sequences.",
+                        required=True)
+    parser.add_argument("-neg", type=argparse.FileType('r'), help="Path to Fasta File Containing Negative Sequences.",
+                        required=True)
+
+    args = parser.parse_args()
+
+    if not os.path.isdir(args.outdir):
+        os.mkdir(args.outdir)
+    else:
+        model_files = glob(os.path.join(args.outdir,'{}*'.format(args.outname)))
+        if len(model_files) > 0:
+            print("Warning model files for model name, {}, exist. These will be overwritten".format(args.outname))
 
 
-    positives_path = 'positives_all.fa'
-    negatives_path = 'negatives_all.fa'
+    positives_path = args.pos
+    negatives_path = args.neg
 
     positive_sequences = process_fasta(positives_path)
     negative_sequences = process_fasta(negatives_path)
@@ -142,46 +177,63 @@ if __name__ == '__main__':
     shuffle(negative_pairs)
 
     # take 550 out (~20%) of the positive set, 1650 out of the negative set for validation (8.5%) , 2176 left in pos set
+    pos_idx = int((1-args.val_frac)*len(positive_pairs))
+    neg_idx = int((1-args.val_frac)*len(negative_pairs))
+    print(pos_idx,neg_idx)
 
-    test_pos = positive_pairs[:550]
-    test_neg = negative_pairs[:1650]
+    train_pos = positive_pairs[:pos_idx]
+    train_neg = negative_pairs[:neg_idx]
 
-    train_pos = positive_pairs[550:]
-    train_neg = negative_pairs[1650:]
+    test_pos = positive_pairs[pos_idx:]
+    test_neg = negative_pairs[neg_idx:]
 
-    with open('train_set.fa','w') as outfile:
-        for i,(seq,pos) in enumerate(test_pos):
+    with open(os.path.join(args.outdir,'{}_train_set.fa'.format(args.outname)),'w') as outfile:
+        for i,(seq,pos) in enumerate(train_pos):
             outfile.write('>pos_{}\n{}\n'.format(i+1,seq.upper()))
-        for i,(seq,neg) in enumerate(test_neg):
+        for i,(seq,neg) in enumerate(train_neg):
             outfile.write('>neg_{}\n{}\n'.format(i+1,seq.upper()))
 
-    val_data = test_pos+test_neg
-    x_test, y_test = zip(*val_data)
+    x_test = None
+    y_test = None
+    if args.val_set and len(args.val_set) == 2:
+        positives_path = args.val_set[0]
+        negatives_path = args.val_set[1]
 
-    x_test = np.array([sequence_to_hot_vectors(seq, normalize_length=max_length) for seq in x_test])
-    y_test = np.array(y_test)
+        positive_sequences = process_fasta(positives_path)
+        negative_sequences = process_fasta(negatives_path)
 
-    cnn = create_model_conv()
-    cnn.summary()
-    train_model(cnn, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
-                refresh_data=5, save_name='cnn_linear',wait_until=50,logfile='cnn_linear.log',x_val=x_test,y_val=y_test)
+        with open(os.path.join(args.outdir,'{}_test_set.fa'.format(args.outname)),'w') as outfile:
+            for i,seq in enumerate(positive_sequences):
+                outfile.write('>pos_{}\n{}\n'.format(i+1,seq.upper()))
+            for i,seq in enumerate(negative_sequences):
+                outfile.write('>neg_{}\n{}\n'.format(i+1,seq.upper()))
 
-    cnn_parallel = create_model_conv_parallel()
-    cnn_parallel.summary()
-    train_model(cnn_parallel, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
-                refresh_data=5, save_name='cnn_parallel', wait_until=50, logfile='cnn_parallel.log',x_val=x_test,y_val=y_test)
+        negative_pairs = [(seq, 0) for seq in negative_sequences]
+        positive_pairs = [(seq, 1) for seq in positive_sequences]
 
-    cnn_lstm = create_model_conv_lstm()
-    cnn_lstm.summary()
-    train_model(cnn_lstm, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
-                refresh_data=5, save_name='cnn_linear_lstm',wait_until=50,logfile='cnn_linear_lstm.log',x_val=x_test,y_val=y_test)
+        val_data = positive_pairs+negative_pairs
+        x_test, y_test = zip(*val_data)
+        x_test = np.array([sequence_to_hot_vectors(seq, normalize_length=max_length) for seq in x_test])
+        y_test = np.array(y_test)
+    elif args.val_frac > 0:
+        with open(os.path.join(args.outdir,'{}_test_set.fa'.format(args.outname)),'w') as outfile:
+            for i,(seq,pos) in enumerate(test_pos):
+                outfile.write('>pos_{}\n{}\n'.format(i+1,seq.upper()))
+            for i,(seq,neg) in enumerate(test_neg):
+                outfile.write('>neg_{}\n{}\n'.format(i+1,seq.upper()))
+        val_data = test_pos+test_neg
+        x_test, y_test = zip(*val_data)
+        x_test = np.array([sequence_to_hot_vectors(seq, normalize_length=max_length) for seq in x_test])
+        y_test = np.array(y_test)
+    else:
+        print("No Validation Data")
 
-    cnn_lstm_parallel = create_model_conv_parallel_lstm()
-    cnn_lstm_parallel.summary()
-    train_model(cnn_lstm_parallel, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
-                refresh_data=5, save_name='cnn_parallel_lstm',wait_until=50,logfile='cnn_parallel_lstm.log',x_val=x_test,y_val=y_test)
-
-    lstm = create_model_lstm()
-    lstm.summary()
-    train_model(lstm, 200, train_pos, train_neg, pos_frac=1.0, neg_frac=0.35,
-                refresh_data=5, save_name='lstm_layer',wait_until=50,logfile='lstm.log',x_val=x_test,y_val=y_test)
+    if x_test is not None and y_test is not None and (len(x_test) == len(y_test)):
+        models = {'cnn-parallel': create_model_conv_parallel, 'cnn-linear': create_model_conv,
+                  'cnn-linear-lstm': create_model_conv_lstm,
+                  'cnn-parallel-lstm': create_model_conv_parallel_lstm, 'lstm': create_model_lstm}
+        n_epochs = args.epochs
+        model = models[args.model]()
+        train_model(model, n_epochs, train_pos, train_neg, pos_frac=args.pos_frac, neg_frac=args.neg_frac,
+                    refresh_data=args.refresh_every, save_name=os.path.join(args.outdir,args.outname),
+                    wait_until=args.wait_until,logfile=os.path.join(args.outdir,'{}.log'.format(args.outname)),x_val=x_test,y_val=y_test)
