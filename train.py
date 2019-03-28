@@ -28,6 +28,7 @@ from random import shuffle
 from models import create_model_lstm,create_model_conv_lstm,\
     create_model_conv,create_model_conv_parallel,create_model_conv_parallel_lstm
 import argparse
+import logging
 from glob import glob
 
 
@@ -226,7 +227,7 @@ if __name__ == '__main__':
         x_test = np.array([sequence_to_hot_vectors(seq, normalize_length=max_length) for seq in x_test])
         y_test = np.array(y_test)
     else:
-        print("No Validation Data")
+        print("No Validation Data, quitting")
 
     if x_test is not None and y_test is not None and (len(x_test) == len(y_test)):
         models = {'cnn-parallel': create_model_conv_parallel, 'cnn-linear': create_model_conv,

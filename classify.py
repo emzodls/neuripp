@@ -46,10 +46,9 @@ if __name__ == '__main__':
                         help="Weights File for Model")
     parser.add_argument("-outname", type=str, help="Prefix for Positive or Negative Data", default="peptide")
     parser.add_argument("-outdir",type=str,help="Path to Output Directory",default=os.getcwd())
-    parser.add_argument('--keep_negatives',action='store_true')
+    parser.add_argument('--keep_negatives',action='store_true',help="Also output a fasta file with the negative peptides")
     parser.add_argument("-b",'--batch_size',type=check_positive,default=1000,help="Number of Samples to Give Model at a Time")
-    group = parser.add_mutually_exclusive_group()
-    parser.add_argument("input", type=argparse.FileType('r'), help="Fasta File Containing Sequences to Classify",
+    parser.add_argument('-i',"--input", type=argparse.FileType('r'), help="Fasta File Containing Sequences to Classify",
                         required=True)
 
     args = parser.parse_args()
@@ -58,8 +57,10 @@ if __name__ == '__main__':
               'cnn-linear-lstm': create_model_conv_lstm,
                   'cnn-parallel-lstm': create_model_conv_parallel_lstm, 'lstm': create_model_lstm}
     model = models[args.model]()
-    if os.path.isfile(args.weights):
+    if args.weights and os.path.isfile(args.weights):
         model.load_weights(args.weights)
         print("Successfully Loaded Weights for Model")
+    if not os.path.isdir(args.outdir):
+        os.mkdir(args.outdir)
     classify_peptides(model, args.input, batch_size=args.batch_size, max_len=120,
-                      output_name=args.outname, output_dictionary=args.outdir, output_negs=args.keep_negatives)
+                      output_name=os.path.join(args.outdir,args.outname), output_negs=args.keep_negatives)

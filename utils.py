@@ -103,6 +103,11 @@ def classify_peptides(model,fasta_file,batch_size=1000,max_len=120,
     classification = {}
     allowed_aas = set('acdefghiklmnpqrstvwy')
     fasta_entries = SeqIO.parse(fasta_file,'fasta')
+    if output_name:
+        if os.path.isfile(output_name + '_pos.fa'):
+            os.remove(output_name + '_pos.fa')
+        if os.path.isfile(output_name + '_neg.fa'):
+            os.remove(output_name + '_neg.fa')
     for idx,entry in enumerate(fasta_entries):
         seq = str(entry.seq).lower()
         if seq[-1] == '*':
@@ -114,7 +119,7 @@ def classify_peptides(model,fasta_file,batch_size=1000,max_len=120,
             test_x = np.array([sequence_to_hot_vectors(fasta_dict[seq],normalize_length=max_len) for seq in order])
             guesses = model.predict(test_x)
             ids = [np.argmax(x) for x in guesses]
-            scores = [np.log(x[1]/x[0]) for x in guesses]
+            scores = [np.log(x[np.argmax(x)] / x[np.argmin(x)]) for x in guesses]
             score_dict = dict(zip(order, scores))
             guess_dict = dict(zip(order, ids))
             if output_name:
@@ -133,14 +138,10 @@ def classify_peptides(model,fasta_file,batch_size=1000,max_len=120,
         test_x = np.array([sequence_to_hot_vectors(fasta_dict[seq], normalize_length= max_len) for seq in order])
         guesses = model.predict(test_x)
         ids = [np.argmax(x) for x in guesses]
-        scores = [np.log(x[1] / x[0]) for x in guesses]
+        scores = [np.log(x[np.argmax(x)] / x[np.argmin(x)]) for x in guesses]
         score_dict = dict(zip(order, scores))
         guess_dict = dict(zip(order, ids))
         if output_name:
-            if os.path.isfile(output_name + '_pos.fa'):
-                os.remove(output_name + '_pos.fa')
-            if os.path.isfile(output_name + '_neg.fa'):
-                os.remove(output_name + '_neg.fa')
             with open(output_name + "_pos.fa", 'a') as outfile_pos, open(output_name + "_neg.fa", 'a') as outfile_neg:
                 for fasta_tag, guess in guess_dict.items():
                     if guess == 1:
