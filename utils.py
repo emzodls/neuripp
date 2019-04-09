@@ -24,6 +24,7 @@
 import numpy as np
 from Bio import SeqIO
 import os
+from models import *
 from glob import glob
 
 def sequence_to_idx(sequence,normalize_length=None):
@@ -95,6 +96,18 @@ def prepare_input_vector(sequences,label,max_len=120):
 
     return(x,y)
 
+
+def check_model_fasta(model_type,fasta_file,label,weight_file=None):
+    models = {'cnn-parallel': create_model_conv_parallel, 'cnn-linear': create_model_conv,
+              'cnn-linear-lstm': create_model_conv_lstm,
+                  'cnn-parallel-lstm': create_model_conv_parallel_lstm, 'lstm': create_model_lstm}
+    model = models[model_type]()
+    if weight_file and os.path.isfile(weight_file):
+        model.load_weights(weight_file)
+        print("Successfully Loaded Weights for Model")
+    x_test,y_test = prepare_input_vector(process_fasta(fasta_file),label)
+    loss, acc = model.evaluate(x_test, y_test)
+    return(loss,acc)
 
 def classify_peptides(model,fasta_file,batch_size=1000,max_len=120,
                       output_name=None,output_dictionary=False,output_negs=False):

@@ -104,12 +104,6 @@ def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_f
 
     return model,best_val_acc,best_val_epoch
 
-def check_model_fasta(stored_model,fasta_file,label):
-    x_test,y_test = prepare_input_vector(process_fasta(fasta_file),label)
-    model = keras.models.load_model(stored_model)
-    loss, acc = model.evaluate(x_test, y_test)
-    return(loss,acc)
-
 def check_model_tuple(stored_model,data):
     x_test,y_test = data
     model = keras.models.load_model(stored_model)
