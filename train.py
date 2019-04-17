@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
 
     parser.add_argument("-pos_frac",type=check_frac,help="Fraction of Positive Dataset to Use for Training",default=1.0)
-    parser.add_argument("-neg_frac", type=check_frac, help="Header for Saved Model File", default=1.0)
+    parser.add_argument("-neg_frac", type=check_frac, help="Fraction of Negative Dataset to Use for Training", default=1.0)
     parser.add_argument("-e","--epochs",type=check_positive,default=100,help="Number of Epochs with Training Set")
     parser.add_argument("-r","--refresh_every",type=check_positive,default=5,help="Reshuffle Training Data Every n "
                                                                                   "Epochs (only works if fraction of Training Set is taken)")
