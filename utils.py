@@ -64,6 +64,22 @@ def sequence_to_hot_vectors(sequence,normalize_length=None):
         seq_matrix[(i,int(aa)-1)] = 1
     return seq_matrix
 
+def pattern_to_hot_vectors(sequence,normalize_length=None):
+    '''
+    :param sequence: amino acid sequence
+    :return: len(seq) x 20 matrix with 1 corresponding to the index of the amino acid
+    '''
+    if normalize_length:
+        sequence = sequence[:normalize_length]
+    sequence = sequence.lower()
+    if normalize_length:
+        pattern_vector = np.zeros((normalize_length, 1))
+    else:
+        pattern_vector = np.zeros((len(sequence), 1))
+    for idx,i in enumerate(sequence):
+        pattern_vector[idx] = int(i)
+    return pattern_vector
+
 def process_fasta(path):
     sequences = []
     allowed_aas = set('acdefghiklmnpqrstvwy')

@@ -66,11 +66,16 @@ def train_model(model,n_epochs,pos_data,neg_data,pos_frac=0.5,neg_frac=0.5,val_f
         x_train,y_train = zip(*test_data)
         x_train = np.array([sequence_to_hot_vectors(seq,normalize_length=max_length) for seq in x_train])
         y_train = np.array(y_train)
+        print(val_frac,val_frac_data)
 
         if not len(x_val) > 0  and not len(y_val) > 0 and val_frac > 0:
             x_val, y_val = zip(*val_frac_data)
             x_val = np.array([sequence_to_hot_vectors(seq, normalize_length=max_length) for seq in x_val])
             y_val = np.array(y_val)
+        elif val_frac > 0:
+            x_val_add, y_val_add = zip(*val_frac_data)
+            x_val = np.concatenate(x_val,x_val_add)
+            y_val = np.concatenate(y_val,y_val_add)
 
         if len(x_val) != 0 and len(x_val) == len(y_val):
             output = model.fit(x_train, y_train, batch_size=5)
@@ -174,8 +179,6 @@ if __name__ == '__main__':
     # take 550 out (~20%) of the positive set, 1650 out of the negative set for validation (8.5%) , 2176 left in pos set
     pos_idx = int((1-args.val_frac)*len(positive_pairs))
     neg_idx = int((1-args.val_frac)*len(negative_pairs))
-    print(pos_idx,neg_idx)
-
     train_pos = positive_pairs[:pos_idx]
     train_neg = negative_pairs[:neg_idx]
 
