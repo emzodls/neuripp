@@ -64,7 +64,7 @@ def sequence_to_hot_vectors(sequence,normalize_length=None):
         seq_matrix[(i,int(aa)-1)] = 1
     return seq_matrix
 
-def pattern_to_hot_vectors(sequence,normalize_length=None):
+def pattern_to_vector(sequence,normalize_length=None):
     '''
     :param sequence: amino acid sequence
     :return: len(seq) x 20 matrix with 1 corresponding to the index of the amino acid
@@ -79,6 +79,16 @@ def pattern_to_hot_vectors(sequence,normalize_length=None):
     for idx,i in enumerate(sequence):
         pattern_vector[idx] = int(i)
     return pattern_vector
+
+def vector_to_pattern(model_prediction):
+    pattern = []
+    for idx in range(model_prediction.size):
+        prediction  = model_prediction[0,idx,0]
+        if prediction > 0.5:
+            pattern.append('1')
+        else:
+            pattern.append('0')
+    return ''.join(pattern)
 
 def process_fasta(path):
     sequences = []
