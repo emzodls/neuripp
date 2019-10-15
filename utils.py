@@ -174,25 +174,26 @@ def classify_peptides(model,fasta_file,batch_size=1000,max_len=120,
                 classification.update(guess_dict)
             fasta_dict = {}
     else:
-        order = sorted(list(fasta_dict.keys()))
-        test_x = np.array([sequence_to_hot_vectors(fasta_dict[seq], normalize_length= max_len) for seq in order])
-        guesses = model.predict(test_x)
-        ids = [np.argmax(x) for x in guesses]
-        scores = [np.log(x[np.argmax(x)] / x[np.argmin(x)]) for x in guesses]
-        score_dict = dict(zip(order, scores))
-        guess_dict = dict(zip(order, ids))
-        if output_name:
-            with open(output_name + "_pos.fa", 'a') as outfile_pos:
-                for fasta_tag, guess in guess_dict.items():
-                    if guess == 1:
-                        outfile_pos.write('>{}|score:{:.2f}\n{}\n'.format(fasta_tag, score_dict[fasta_tag],
-                                                                          fasta_dict[fasta_tag].upper()))
-                    elif output_negs:
-                        with open(output_name + "_neg.fa", 'a') as outfile_neg:
-                            outfile_neg.write('>{}|score:{:.2f}\n{}\n'.format(fasta_tag, score_dict[fasta_tag],
-                                                                          fasta_dict[fasta_tag].upper()))
-        if output_dictionary:
-            classification.update(guess_dict)
+        if fasta_dict:
+            order = sorted(list(fasta_dict.keys()))
+            test_x = np.array([sequence_to_hot_vectors(fasta_dict[seq], normalize_length= max_len) for seq in order])
+            guesses = model.predict(test_x)
+            ids = [np.argmax(x) for x in guesses]
+            scores = [np.log(x[np.argmax(x)] / x[np.argmin(x)]) for x in guesses]
+            score_dict = dict(zip(order, scores))
+            guess_dict = dict(zip(order, ids))
+            if output_name:
+                with open(output_name + "_pos.fa", 'a') as outfile_pos:
+                    for fasta_tag, guess in guess_dict.items():
+                        if guess == 1:
+                            outfile_pos.write('>{}|score:{:.2f}\n{}\n'.format(fasta_tag, score_dict[fasta_tag],
+                                                                              fasta_dict[fasta_tag].upper()))
+                        elif output_negs:
+                            with open(output_name + "_neg.fa", 'a') as outfile_neg:
+                                outfile_neg.write('>{}|score:{:.2f}\n{}\n'.format(fasta_tag, score_dict[fasta_tag],
+                                                                              fasta_dict[fasta_tag].upper()))
+            if output_dictionary:
+                classification.update(guess_dict)
     if output_dictionary:
         return classification
     else:
