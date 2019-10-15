@@ -3,7 +3,7 @@ NeuRiPP is a neural network framework designed for classifying peptide sequences
 1. classify - Given a set of model weights and a fasta file can classify sequences as putative RiPP sequences. 
 2. train - Given a set of positive and negative sequences as fasta files, train a specific neural network architecture to optimize its weights.
 
-A description of the different neural network architectures and NeuRiPP's performance can be found int this [publication](https://rdcu.be/bUlZJ).
+A description of the different neural network architectures and NeuRiPP's performance can be found in this [publication](https://rdcu.be/bUlZJ).
 
 Note: NeuRiPP was trained with inputs from gene callers and open reading frames from sequence data and may give unexpected results for synthetic peptide sequences.
 
