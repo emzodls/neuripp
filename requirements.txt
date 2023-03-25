@@ -1,2 +1,2 @@
 biopython
-tensorflow==2.0.0-alpha0
+tensorflow==2.11.1
